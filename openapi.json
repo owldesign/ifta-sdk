@@ -1,0 +1,480 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Truker IFTA API",
+        "version": "1.0.0",
+        "description": "Read-only IFTA data (periods, rates, footnotes, jurisdictions, fuel types). All `/api/v1/*` endpoints require a bearer token with the `ifta.read` ability.\n"
+    },
+    "servers": [
+        {
+            "url": "https://truker.app",
+            "description": "Production"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local development"
+        }
+    ],
+    "tags": [
+        {
+            "name": "IFTA Data",
+            "description": "Read-only IFTA periods and rates"
+        }
+    ],
+    "paths": {
+        "/api/v1/periods": {
+            "get": {
+                "summary": "List periods",
+                "description": "Paginated IFTA periods with counts of rates and footnotes.",
+                "tags": [
+                    "IFTA Data"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated periods",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPeriods"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/v1/periods/{quarter}": {
+            "get": {
+                "summary": "Show a period",
+                "description": "Returns a specific period with rates, fuel types, jurisdictions, and footnotes.",
+                "tags": [
+                    "IFTA Data"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "quarter",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1Q2024"
+                        },
+                        "description": "Quarter code (e.g., 1Q2024)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Period detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeriodDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "description": "Period not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/rates": {
+            "get": {
+                "summary": "List rates",
+                "description": "Paginated IFTA rates with optional filtering.",
+                "tags": [
+                    "IFTA Data"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "quarter",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "1Q2024"
+                        },
+                        "description": "Filter by quarter code"
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "US",
+                                "CAN"
+                            ]
+                        },
+                        "description": "Filter by country"
+                    },
+                    {
+                        "name": "jurisdiction",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "AB"
+                        },
+                        "description": "Jurisdiction code"
+                    },
+                    {
+                        "name": "fuel_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Diesel"
+                        },
+                        "description": "Fuel type name"
+                    },
+                    {
+                        "name": "changed",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Only rates flagged as changed"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated rates",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedRates"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "Bearer"
+            }
+        },
+        "responses": {
+            "Unauthorized": {
+                "description": "Missing or invalid bearer token",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            },
+                            "example": {
+                                "message": "Unauthenticated. Provide a valid API token."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "PaginatedPeriods": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PeriodSummary"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/PaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                }
+            },
+            "PeriodSummary": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "quarter": {
+                        "type": "string",
+                        "example": "1Q2024"
+                    },
+                    "title": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "link": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "exchange_rate": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "rates_count": {
+                        "type": "integer"
+                    },
+                    "footnotes_count": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "PeriodDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PeriodSummary"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "rates": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/RateResource"
+                                }
+                            },
+                            "footnotes": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/Footnote"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "PaginatedRates": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RateResource"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/PaginationLinks"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                }
+            },
+            "RateResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "period_id": {
+                        "type": "integer"
+                    },
+                    "jurisdiction_id": {
+                        "type": "integer"
+                    },
+                    "fuel_type_id": {
+                        "type": "integer"
+                    },
+                    "country": {
+                        "type": "string",
+                        "enum": [
+                            "US",
+                            "CAN"
+                        ]
+                    },
+                    "rate": {
+                        "type": "number",
+                        "format": "double",
+                        "example": 0.365
+                    },
+                    "rate_change": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "period": {
+                        "$ref": "#/components/schemas/PeriodSummary"
+                    },
+                    "jurisdiction": {
+                        "$ref": "#/components/schemas/Jurisdiction"
+                    },
+                    "fuelType": {
+                        "$ref": "#/components/schemas/FuelType"
+                    }
+                }
+            },
+            "Jurisdiction": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "AB"
+                    },
+                    "country": {
+                        "type": "string",
+                        "enum": [
+                            "US",
+                            "CAN"
+                        ]
+                    },
+                    "external_id": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "effective_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "surcharge": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                }
+            },
+            "FuelType": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Diesel"
+                    }
+                }
+            },
+            "Footnote": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "period_id": {
+                        "type": "integer"
+                    },
+                    "jurisdiction_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "FN-01"
+                    },
+                    "content": {
+                        "type": "string",
+                        "example": "Surcharge applies for LPG."
+                    }
+                }
+            },
+            "PaginationLinks": {
+                "type": "object",
+                "properties": {
+                    "first": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "last": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "prev": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    }
+                }
+            },
+            "PaginationMeta": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer"
+                    },
+                    "from": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer"
+                    },
+                    "path": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "per_page": {
+                        "type": "integer"
+                    },
+                    "to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            }
+        }
+    }
+}

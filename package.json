@@ -1,0 +1,37 @@
+{
+  "name": "ifta-sdk",
+  "version": "0.1.0",
+  "description": "Typed, ESM-first client for the Truker IFTA REST API.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "openapi.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ifta",
+    "truker",
+    "api",
+    "client",
+    "sdk"
+  ],
+  "author": "Vadim Goncharov <https://github.com/owldesign>",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
